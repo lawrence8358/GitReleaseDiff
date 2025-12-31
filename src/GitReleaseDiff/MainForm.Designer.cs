@@ -53,6 +53,18 @@ partial class MainForm
         statusPanel = new Panel();
         lblStatus = new Label();
         progressBar = new ProgressBar();
+        lblBuildOutput = new Label();
+        txtBuildOutput = new TextBox();
+        btnBrowseBuildOutput = new Button();
+        buildOutputPanel = new TableLayoutPanel();
+        lblDeployment = new Label();
+        txtDeployment = new TextBox();
+        btnBrowseDeployment = new Button();
+        deploymentPanel = new TableLayoutPanel();
+        lblBinaryWarning = new Label();
+        btnCopyFiles = new Button();
+        lblProjectPrefix = new Label();
+        txtProjectPrefix = new TextBox();
         mainPanel.SuspendLayout();
         inputPanel.SuspendLayout();
         buttonPanel.SuspendLayout();
@@ -95,10 +107,22 @@ partial class MainForm
         inputPanel.Controls.Add(lblCompareCommit, 0, 3);
         inputPanel.Controls.Add(txtCompareCommit, 1, 3);
         inputPanel.Controls.Add(buttonPanel, 1, 4);
+        inputPanel.Controls.Add(lblBuildOutput, 0, 5);
+        inputPanel.Controls.Add(buildOutputPanel, 1, 5);
+        inputPanel.Controls.Add(lblProjectPrefix, 0, 6);
+        inputPanel.Controls.Add(txtProjectPrefix, 1, 6);
+        inputPanel.Controls.Add(lblDeployment, 0, 7);
+        inputPanel.Controls.Add(deploymentPanel, 1, 7);
+        inputPanel.Controls.Add(lblBinaryWarning, 0, 8);
+        inputPanel.Controls.Add(btnCopyFiles, 1, 8);
         inputPanel.Dock = DockStyle.Fill;
         inputPanel.Location = new Point(13, 13);
         inputPanel.Name = "inputPanel";
-        inputPanel.RowCount = 5;
+        inputPanel.RowCount = 9;
+        inputPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        inputPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        inputPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        inputPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         inputPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         inputPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         inputPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
@@ -354,6 +378,142 @@ partial class MainForm
         progressBar.TabIndex = 1;
         progressBar.Visible = false;
         // 
+        // lblBuildOutput
+        // 
+        lblBuildOutput.Anchor = AnchorStyles.Left;
+        lblBuildOutput.AutoSize = true;
+        lblBuildOutput.Location = new Point(3, 150);
+        lblBuildOutput.Name = "lblBuildOutput";
+        lblBuildOutput.Size = new Size(130, 18);
+        lblBuildOutput.TabIndex = 9;
+        lblBuildOutput.Text = "建置結果資料夾：";
+        // 
+        // buildOutputPanel
+        // 
+        buildOutputPanel.AutoSize = true;
+        buildOutputPanel.ColumnCount = 2;
+        buildOutputPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+        buildOutputPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 90F));
+        buildOutputPanel.Controls.Add(txtBuildOutput, 0, 0);
+        buildOutputPanel.Controls.Add(btnBrowseBuildOutput, 1, 0);
+        buildOutputPanel.Dock = DockStyle.Fill;
+        buildOutputPanel.Location = new Point(185, 186);
+        buildOutputPanel.Name = "buildOutputPanel";
+        buildOutputPanel.RowCount = 1;
+        buildOutputPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        buildOutputPanel.Size = new Size(686, 36);
+        buildOutputPanel.TabIndex = 10;
+        // 
+        // txtBuildOutput
+        // 
+        txtBuildOutput.Anchor = AnchorStyles.Left | AnchorStyles.Right;
+        txtBuildOutput.Enabled = false;
+        txtBuildOutput.Location = new Point(3, 3);
+        txtBuildOutput.Name = "txtBuildOutput";
+        txtBuildOutput.PlaceholderText = "請選擇 CI 建置結果資料夾";
+        txtBuildOutput.Size = new Size(590, 25);
+        txtBuildOutput.TabIndex = 0;
+        // 
+        // btnBrowseBuildOutput
+        // 
+        btnBrowseBuildOutput.Anchor = AnchorStyles.Left;
+        btnBrowseBuildOutput.Enabled = false;
+        btnBrowseBuildOutput.Location = new Point(599, 2);
+        btnBrowseBuildOutput.Name = "btnBrowseBuildOutput";
+        btnBrowseBuildOutput.Size = new Size(84, 27);
+        btnBrowseBuildOutput.TabIndex = 1;
+        btnBrowseBuildOutput.Text = "瀏覽...";
+        btnBrowseBuildOutput.UseVisualStyleBackColor = true;
+        // 
+        // lblDeployment
+        // 
+        lblDeployment.Anchor = AnchorStyles.Left;
+        lblDeployment.AutoSize = true;
+        lblDeployment.Location = new Point(3, 190);
+        lblDeployment.Name = "lblDeployment";
+        lblDeployment.Size = new Size(130, 18);
+        lblDeployment.TabIndex = 11;
+        lblDeployment.Text = "預計上版資料夾：";
+        // 
+        // deploymentPanel
+        // 
+        deploymentPanel.AutoSize = true;
+        deploymentPanel.ColumnCount = 2;
+        deploymentPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+        deploymentPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 90F));
+        deploymentPanel.Controls.Add(txtDeployment, 0, 0);
+        deploymentPanel.Controls.Add(btnBrowseDeployment, 1, 0);
+        deploymentPanel.Dock = DockStyle.Fill;
+        deploymentPanel.Location = new Point(185, 228);
+        deploymentPanel.Name = "deploymentPanel";
+        deploymentPanel.RowCount = 1;
+        deploymentPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        deploymentPanel.Size = new Size(686, 36);
+        deploymentPanel.TabIndex = 12;
+        // 
+        // txtDeployment
+        // 
+        txtDeployment.Anchor = AnchorStyles.Left | AnchorStyles.Right;
+        txtDeployment.Enabled = false;
+        txtDeployment.Location = new Point(3, 3);
+        txtDeployment.Name = "txtDeployment";
+        txtDeployment.PlaceholderText = "請選擇預計上版資料夾";
+        txtDeployment.Size = new Size(590, 25);
+        txtDeployment.TabIndex = 0;
+        // 
+        // btnBrowseDeployment
+        // 
+        btnBrowseDeployment.Anchor = AnchorStyles.Left;
+        btnBrowseDeployment.Enabled = false;
+        btnBrowseDeployment.Location = new Point(599, 2);
+        btnBrowseDeployment.Name = "btnBrowseDeployment";
+        btnBrowseDeployment.Size = new Size(84, 27);
+        btnBrowseDeployment.TabIndex = 1;
+        btnBrowseDeployment.Text = "瀏覽...";
+        btnBrowseDeployment.UseVisualStyleBackColor = true;
+        // 
+        // lblBinaryWarning
+        // 
+        lblBinaryWarning.Anchor = AnchorStyles.Left;
+        lblBinaryWarning.AutoSize = true;
+        lblBinaryWarning.ForeColor = Color.Red;
+        lblBinaryWarning.Location = new Point(3, 230);
+        lblBinaryWarning.Name = "lblBinaryWarning";
+        lblBinaryWarning.Size = new Size(130, 40);
+        lblBinaryWarning.TabIndex = 13;
+        lblBinaryWarning.Text = "注意：dll/exe 等二進位檔案不會自動複製";
+        // 
+        // btnCopyFiles
+        // 
+        btnCopyFiles.Enabled = false;
+        btnCopyFiles.Location = new Point(188, 270);
+        btnCopyFiles.Margin = new Padding(3, 3, 3, 3);
+        btnCopyFiles.Name = "btnCopyFiles";
+        btnCopyFiles.Size = new Size(120, 30);
+        btnCopyFiles.TabIndex = 14;
+        btnCopyFiles.Text = "執行複製";
+        btnCopyFiles.UseVisualStyleBackColor = true;
+        // 
+        // lblProjectPrefix
+        // 
+        lblProjectPrefix.Anchor = AnchorStyles.Left;
+        lblProjectPrefix.AutoSize = true;
+        lblProjectPrefix.Location = new Point(3, 190);
+        lblProjectPrefix.Name = "lblProjectPrefix";
+        lblProjectPrefix.Size = new Size(130, 18);
+        lblProjectPrefix.TabIndex = 15;
+        lblProjectPrefix.Text = "專案路徑前綴：";
+        // 
+        // txtProjectPrefix
+        // 
+        txtProjectPrefix.Enabled = false;
+        txtProjectPrefix.Dock = DockStyle.Fill;
+        txtProjectPrefix.Location = new Point(185, 188);
+        txtProjectPrefix.Name = "txtProjectPrefix";
+        txtProjectPrefix.PlaceholderText = "例如: AFA_EmployerQualification（可選）";
+        txtProjectPrefix.Size = new Size(686, 25);
+        txtProjectPrefix.TabIndex = 16;
+        // 
         // MainForm
         // 
         AutoScaleDimensions = new SizeF(8F, 18F);
@@ -401,4 +561,16 @@ partial class MainForm
     private DataGridViewTextBoxColumn dataGridViewTextBoxColumn4;
     private DataGridViewTextBoxColumn dataGridViewTextBoxColumn5;
     private Panel statusPanel;
+    private Label lblBuildOutput;
+    private TextBox txtBuildOutput;
+    private Button btnBrowseBuildOutput;
+    private Label lblDeployment;
+    private TextBox txtDeployment;
+    private Button btnBrowseDeployment;
+    private Label lblBinaryWarning;
+    private Button btnCopyFiles;
+    private TableLayoutPanel buildOutputPanel;
+    private TableLayoutPanel deploymentPanel;
+    private Label lblProjectPrefix;
+    private TextBox txtProjectPrefix;
 }

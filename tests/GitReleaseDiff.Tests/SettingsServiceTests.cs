@@ -22,7 +22,10 @@ public class SettingsServiceTests
         {
             GitUrl = "https://example.com/git",
             BaseCommitId = "abc123",
-            CompareCommitId = "def456"
+            CompareCommitId = "def456",
+            BuildOutputFolder = @"C:\Build",
+            DeploymentFolder = @"C:\Deploy",
+            ProjectPathPrefix = "TestProject"
         };
 
         try
@@ -35,6 +38,9 @@ public class SettingsServiceTests
             Assert.Equal(settings.GitUrl, loaded.GitUrl);
             Assert.Equal(settings.BaseCommitId, loaded.BaseCommitId);
             Assert.Equal(settings.CompareCommitId, loaded.CompareCommitId);
+            Assert.Equal(settings.BuildOutputFolder, loaded.BuildOutputFolder);
+            Assert.Equal(settings.DeploymentFolder, loaded.DeploymentFolder);
+            Assert.Equal(settings.ProjectPathPrefix, loaded.ProjectPathPrefix);
         }
         finally
         {

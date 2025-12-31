@@ -36,6 +36,13 @@
    - 顯示進度條和處理狀態
    - 支援取消操作
 
+6. **自動複製靜態檔案**
+   - 自動將差異檔案從 CI 建置目錄複製到上版目錄
+   - 支援選擇建置結果資料夾與預計上版資料夾
+   - 自動維持資料夾層級結構
+   - 複製前自動檢查並提示目標資料夾狀態
+   - 針對已存在的目標資料夾提供清空確認（含路徑提示）
+
 ## 系統需求
 
 - Windows 作業系統
@@ -58,7 +65,8 @@ GitReleaseDiff/
 │       ├── Services/                # 服務類別
 │       │   ├── GitService.cs        # Git 操作服務
 │       │   ├── SettingsService.cs   # 設定儲存服務
-│       │   └── CsvExportService.cs  # CSV 匯出服務
+│       │   ├── CsvExportService.cs  # CSV 匯出服務
+│       │   └── FileCopyService.cs   # 檔案複製服務
 │       ├── MainForm.cs              # 主視窗邏輯
 │       ├── MainForm.Designer.cs     # 主視窗設計
 │       └── Program.cs               # 程式進入點
@@ -67,7 +75,8 @@ GitReleaseDiff/
         ├── FileDiffInfoTests.cs     # 檔案差異模型測試
         ├── GitServiceTests.cs       # Git 服務測試
         ├── CsvExportServiceTests.cs # CSV 匯出測試
-        └── SettingsServiceTests.cs  # 設定服務測試
+        ├── SettingsServiceTests.cs  # 設定服務測試
+        └── FileCopyServiceTests.cs  # 檔案複製測試
 ```
 
 ## 建置與執行
@@ -114,7 +123,16 @@ src\GitReleaseDiff\bin\Release\net8.0-windows\GitReleaseDiff.exe
 
 4. 如需匯出結果，點擊「匯出 CSV」按鈕
 
-5. 以下為應用程式執行畫面範例：
+5. **自動複製檔案**（比對完成後）：
+   - 選擇「建置結果資料夾」（CI Build Artifacts）
+   - **（可選）** 輸入「專案路徑前綴」
+     - 適用於多專案方案：若 Git 差異路徑包含專案資料夾前綴，但建置輸出不包含，請填寫此欄位
+     - 例如：`Application` 或 `Application.UnitTest/`
+   - 選擇「預計上版資料夾」（Deployment Folder）
+   - 點擊「執行複製」按鈕
+   - 系統會自動比對 Source Code 與建置結果，並複製差異檔案到預計上版資料夾。
+
+6. 以下為應用程式執行畫面範例：
    ![執行畫面](doc/Screenshot.png)
 
 
@@ -133,13 +151,17 @@ src\GitReleaseDiff\bin\Release\net8.0-windows\GitReleaseDiff.exe
 | System.Security.Cryptography.ProtectedData | 10.0.1 | MIT | Windows DPAPI 資料加密 |
 | xUnit | 2.6.2 | Apache 2.0 | 單元測試框架 |
 
-所有使用的套件皆為允許商用的開源授權。
+> 所有使用的套件皆為允許商用的開源授權。
+ 
+## 待辦事項 (TODO)
+- `支援二進位檔案（.dll, .exe）的智慧對應與複製`：目前從 Git 歷程僅能得知原始碼變更，無法得知對應的專案編譯後所產出的二進位檔名，未來需評估透過專案檔解析或規則對應來處理。
 
 ## 修改歷程
 
 | 版本 | 日期 | 說明 |
 |------|------|------|
 | 1.0.0 | 2025-12-31 | 初始版本發布 | 
+| 1.1.0 | 2026-01-01 | 新增自動複製上版差異檔案功能 | 
 
 ## 開發者
 

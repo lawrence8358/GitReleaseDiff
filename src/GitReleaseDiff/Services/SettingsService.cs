@@ -47,28 +47,36 @@ public class SettingsService
     {
         if (File.Exists(_settingsFilePath))
         {
-            var json = File.ReadAllText(_settingsFilePath);
-            var settings = JsonConvert.DeserializeObject<AppSettings>(json);
-
-            if (settings != null && !string.IsNullOrEmpty(settings.PersonalAccessToken))
+            try
             {
-                try
-                {
-                    var encryptedData = Convert.FromBase64String(settings.PersonalAccessToken);
-                    var decryptedData = ProtectedData.Unprotect(encryptedData, null, DataProtectionScope.CurrentUser);
-                    settings.PersonalAccessToken = Encoding.UTF8.GetString(decryptedData);
-                }
-                catch
-                {
-                    // 解密失敗可能是因為：
-                    // 1. 舊版未加密的設定
-                    // 2. Base64 格式錯誤
-                    // 3. 不同的使用者或機器
-                    // 在這些情況下，我們假設它是明文或無效，保持原樣
-                }
-            }
+                var json = File.ReadAllText(_settingsFilePath);
+                var settings = JsonConvert.DeserializeObject<AppSettings>(json);
 
-            return settings ?? new AppSettings();
+                if (settings != null && !string.IsNullOrEmpty(settings.PersonalAccessToken))
+                {
+                    try
+                    {
+                        var encryptedData = Convert.FromBase64String(settings.PersonalAccessToken);
+                        var decryptedData = ProtectedData.Unprotect(encryptedData, null, DataProtectionScope.CurrentUser);
+                        settings.PersonalAccessToken = Encoding.UTF8.GetString(decryptedData);
+                    }
+                    catch
+                    {
+                        // 解密失敗可能是因為：
+                        // 1. 舊版未加密的設定
+                        // 2. Base64 格式錯誤
+                        // 3. 不同的使用者或機器
+                        // 在這些情況下，我們假設它是明文或無效，保持原樣
+                    }
+                }
+
+                return settings ?? new AppSettings();
+            }
+            catch
+            {
+                // 若讀取或解析失敗，回傳預設設定
+                return new AppSettings();
+            }
         }
 
         return new AppSettings();

@@ -11,6 +11,7 @@ public partial class MainForm : Form
     private readonly GitService _gitService;
     private readonly SettingsService _settingsService;
     private readonly CsvExportService _csvExportService;
+    private readonly FileCopyService _fileCopyService;
     private List<FileDiffInfo> _currentResults = new();
     private CancellationTokenSource? _cancellationTokenSource;
 
@@ -24,6 +25,7 @@ public partial class MainForm : Form
         _gitService = new GitService();
         _settingsService = new SettingsService();
         _csvExportService = new CsvExportService();
+        _fileCopyService = new FileCopyService();
 
         // 載入上次的設定
         LoadSettings();
@@ -32,6 +34,9 @@ public partial class MainForm : Form
         btnCompare.Click += BtnCompare_Click;
         btnExport.Click += BtnExport_Click;
         btnCancel.Click += BtnCancel_Click;
+        btnBrowseBuildOutput.Click += BtnBrowseBuildOutput_Click;
+        btnBrowseDeployment.Click += BtnBrowseDeployment_Click;
+        btnCopyFiles.Click += BtnCopyFiles_Click;
         this.FormClosing += MainForm_FormClosing;
     }
 
@@ -45,6 +50,9 @@ public partial class MainForm : Form
         txtPat.Text = settings.PersonalAccessToken;
         txtBaseCommit.Text = settings.BaseCommitId;
         txtCompareCommit.Text = settings.CompareCommitId;
+        txtBuildOutput.Text = settings.BuildOutputFolder;
+        txtDeployment.Text = settings.DeploymentFolder;
+        txtProjectPrefix.Text = settings.ProjectPathPrefix;
     }
 
     /// <summary>
@@ -57,7 +65,10 @@ public partial class MainForm : Form
             GitUrl = txtGitUrl.Text.Trim(),
             PersonalAccessToken = txtPat.Text.Trim(),
             BaseCommitId = txtBaseCommit.Text.Trim(),
-            CompareCommitId = txtCompareCommit.Text.Trim()
+            CompareCommitId = txtCompareCommit.Text.Trim(),
+            BuildOutputFolder = txtBuildOutput.Text.Trim(),
+            DeploymentFolder = txtDeployment.Text.Trim(),
+            ProjectPathPrefix = txtProjectPrefix.Text.Trim()
         };
         _settingsService.Save(settings);
     }
@@ -252,6 +263,15 @@ public partial class MainForm : Form
         btnCancel.Enabled = isProcessing;
         progressBar.Visible = isProcessing;
 
+        // 新增控制項狀態控制
+        bool hasResults = !isProcessing && _currentResults.Count > 0;
+        txtBuildOutput.Enabled = hasResults;
+        btnBrowseBuildOutput.Enabled = hasResults;
+        txtProjectPrefix.Enabled = hasResults;
+        txtDeployment.Enabled = hasResults;
+        btnBrowseDeployment.Enabled = hasResults;
+        btnCopyFiles.Enabled = hasResults;
+
         if (isProcessing)
         {
             lblStatus.Text = "正在處理中...";
@@ -291,5 +311,128 @@ public partial class MainForm : Form
         }
 
         lblResultCount.Text = $"比對結果：共 {results.Count} 個檔案";
-    } 
+    }
+
+    /// <summary>
+    /// 瀏覽建置結果資料夾
+    /// </summary>
+    private void BtnBrowseBuildOutput_Click(object? sender, EventArgs e)
+    {
+        using var dialog = new FolderBrowserDialog();
+        dialog.Description = "請選擇 CI 建置結果資料夾";
+        if (Directory.Exists(txtBuildOutput.Text))
+        {
+            dialog.InitialDirectory = txtBuildOutput.Text;
+        }
+
+        if (dialog.ShowDialog() == DialogResult.OK)
+        {
+            txtBuildOutput.Text = dialog.SelectedPath;
+        }
+    }
+
+    /// <summary>
+    /// 瀏覽預計上版資料夾
+    /// </summary>
+    private void BtnBrowseDeployment_Click(object? sender, EventArgs e)
+    {
+        using var dialog = new FolderBrowserDialog();
+        dialog.Description = "請選擇預計上版資料夾";
+        if (Directory.Exists(txtDeployment.Text))
+        {
+            dialog.InitialDirectory = txtDeployment.Text;
+        }
+
+        if (dialog.ShowDialog() == DialogResult.OK)
+        {
+            txtDeployment.Text = dialog.SelectedPath;
+        }
+    }
+
+    /// <summary>
+    /// 執行檔案複製
+    /// </summary>
+    private void BtnCopyFiles_Click(object? sender, EventArgs e)
+    {
+        var buildPath = txtBuildOutput.Text.Trim();
+        var deployPath = txtDeployment.Text.Trim();
+
+        // 驗證輸入
+        if (string.IsNullOrWhiteSpace(buildPath))
+        {
+            MessageBox.Show("請選擇建置結果資料夾", "提示", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            txtBuildOutput.Focus();
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(deployPath))
+        {
+            MessageBox.Show("請選擇預計上版資料夾", "提示", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            txtDeployment.Focus();
+            return;
+        }
+
+        if (!Directory.Exists(buildPath))
+        {
+            MessageBox.Show($"找不到建置結果資料夾：\n{buildPath}", "錯誤", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            return;
+        }
+
+        // 檢查部署資料夾是否已有檔案
+        if (Directory.Exists(deployPath) && Directory.GetFileSystemEntries(deployPath).Length > 0)
+        {
+            var result = MessageBox.Show(
+                $"預計上版資料夾此路徑：\n{deployPath}\n\n該資料夾內已有檔案，是否刪除所有內容並繼續？\n(注意：此操作將清空該資料夾)",
+                "確認刪除",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Warning,
+                MessageBoxDefaultButton.Button2);
+
+            if (result != DialogResult.Yes)
+            {
+                return;
+            }
+
+            try
+            {
+                // 清空資料夾
+                var dirInfo = new DirectoryInfo(deployPath);
+                foreach (var file in dirInfo.GetFiles()) file.Delete();
+                foreach (var dir in dirInfo.GetDirectories()) dir.Delete(true);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"清空資料夾失敗：{ex.Message}", "錯誤", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+        }
+
+        try
+        {
+            // 儲存設定
+            SaveSettings();
+
+            // 執行複製
+            var projectPrefix = txtProjectPrefix.Text.Trim();
+            var result = _fileCopyService.CopyMatchedFiles(_currentResults, buildPath, deployPath, projectPrefix);
+
+            // 顯示結果
+            var message = $"複製完成！\n" +
+                          $"成功複製：{result.CopiedCount} 個檔案\n" +
+                          $"未找到檔案：{result.NotFoundFiles.Count} 個\n\n" +
+                          $"注意：.dll, .exe 等二進位檔案及被刪除的檔案未包含在內。";
+
+            if (result.NotFoundFiles.Count > 0)
+            {
+                message += $"\n\n未找到的檔案範例：\n{string.Join("\n", result.NotFoundFiles.Take(3))}" +
+                           (result.NotFoundFiles.Count > 3 ? "\n..." : "");
+            }
+
+            MessageBox.Show(message, "處理完成", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"檔案複製過程發生錯誤：{ex.Message}", "錯誤", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
 }
