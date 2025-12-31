@@ -1,0 +1,85 @@
+## Visual Studio / .NET core common ignores
+# Build folders
+bin/
+obj/
+out/
+
+# Visual Studio temporary files, build results, and
+# user-specific files
+*.user
+*.userosscache
+*.suo
+*.sln.docstates
+.vs/
+.vscode/
+
+# Rider IDE
+.idea/
+
+# NuGet
+packages/
+# NuGet package cache
+*.nupkg
+project.lock.json
+project.fragment.lock.json
+project.assets.json
+
+# JetBrains Rider
+/.idea/
+
+# Test results
+TestResults/
+**/TestResults/
+*.trx
+
+# Coverage
+coverage/
+*.coverage
+*.coveragexml
+
+# Publish folder
+publish/
+
+# Logs
+*.log
+
+# Database files
+*.mdf
+*.ldf
+
+# Debug files
+*.pdb
+*.mdb
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# JetBrains Rider caches
+/.idea/
+/.idea/*
+
+# VS Code workspace storage
+.vscode/*
+
+# User-specific files
+*.rsuser
+*.suo
+*.user
+*.userprefs
+
+# Visual Studio profiler
+*.psess
+*.vsp
+*.vspx
+
+# MonoDevelop
+*.pidb
+
+# Others
+*.swp
+~$*
+
+# Ignore compiled outputs for all projects in repo
+**/bin/
+**/obj/
