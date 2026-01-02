@@ -133,7 +133,9 @@ src\GitReleaseDiff\bin\Release\net8.0-windows\GitReleaseDiff.exe
    - 系統會自動比對 Source Code 與建置結果，並複製差異檔案到預計上版資料夾。
 
 6. 以下為應用程式執行畫面範例：
-   ![執行畫面](doc/Screenshot.png)
+   ![執行畫面](doc/Screenshot.png) 
+   ![輸出結果畫面](doc/Screenshot2.png)
+
 
 
 ### Personal Access Token (PAT) 安全提示

@@ -1,7 +1,7 @@
-using GitReleaseDiff.Models;
 using System.Diagnostics;
 using System.Text;
 using System.Text.RegularExpressions;
+using GitReleaseDiff.Models;
 
 namespace GitReleaseDiff.Services;
 
@@ -59,11 +59,11 @@ public class GitService
 
         using var httpClient = new HttpClient();
         httpClient.DefaultRequestHeaders.Add("Accept", "application/json");
-        
+
         // 設定 PAT 授權 (使用 Basic Authentication)
         var authToken = Convert.ToBase64String(System.Text.Encoding.ASCII.GetBytes($":{personalAccessToken}"));
         httpClient.DefaultRequestHeaders.Add("Authorization", $"Basic {authToken}");
-        
+
         // 設定超時時間
         httpClient.Timeout = TimeSpan.FromMinutes(5);
 
@@ -71,6 +71,7 @@ public class GitService
         var apiUrl = $"{apiInfo.BaseUrl}/_apis/git/repositories/{apiInfo.RepositoryName}/diffs/commits?" +
                      $"baseVersion={baseCommitId}&baseVersionType=commit" +
                      $"&targetVersion={compareCommitId}&targetVersionType=commit" +
+                     $"&$top=2000" +
                      $"&api-version=6.0";
 
         progress?.Report($"正在查詢 Commit 差異: {baseCommitId.Substring(0, Math.Min(7, baseCommitId.Length))} -> {compareCommitId.Substring(0, Math.Min(7, compareCommitId.Length))}...");
@@ -78,7 +79,7 @@ public class GitService
         try
         {
             var response = await httpClient.GetAsync(apiUrl, cancellationToken);
-            
+
             if (!response.IsSuccessStatusCode)
             {
                 var errorContent = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -120,7 +121,7 @@ public class GitService
         // 或: https://dev.azure.com/organization/ProjectName/_git/RepoName
 
         var match = Regex.Match(gitUrl, @"^(https?://[^/]+(?:/tfs)?/[^/]+/[^/]+)/_git/([^/]+)/?$", RegexOptions.IgnoreCase);
-        
+
         if (match.Success)
         {
             return new ApiInfo
@@ -132,7 +133,7 @@ public class GitService
 
         // 嘗試另一種格式
         match = Regex.Match(gitUrl, @"^(https?://[^/]+/[^/]+/[^/]+)/_git/([^/]+)/?$", RegexOptions.IgnoreCase);
-        
+
         if (match.Success)
         {
             return new ApiInfo
