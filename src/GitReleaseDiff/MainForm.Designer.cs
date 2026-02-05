@@ -65,6 +65,8 @@ partial class MainForm
         btnCopyFiles = new Button();
         lblProjectPrefix = new Label();
         txtProjectPrefix = new TextBox();
+        lblForceCopyFiles = new Label();
+        txtForceCopyFiles = new TextBox();
         mainPanel.SuspendLayout();
         inputPanel.SuspendLayout();
         buttonPanel.SuspendLayout();
@@ -113,12 +115,15 @@ partial class MainForm
         inputPanel.Controls.Add(txtProjectPrefix, 1, 6);
         inputPanel.Controls.Add(lblDeployment, 0, 7);
         inputPanel.Controls.Add(deploymentPanel, 1, 7);
-        inputPanel.Controls.Add(lblBinaryWarning, 0, 8);
-        inputPanel.Controls.Add(btnCopyFiles, 1, 8);
+        inputPanel.Controls.Add(lblForceCopyFiles, 0, 8);
+        inputPanel.Controls.Add(txtForceCopyFiles, 1, 8);
+        inputPanel.Controls.Add(lblBinaryWarning, 0, 9);
+        inputPanel.Controls.Add(btnCopyFiles, 1, 9);
         inputPanel.Dock = DockStyle.Fill;
         inputPanel.Location = new Point(13, 13);
         inputPanel.Name = "inputPanel";
-        inputPanel.RowCount = 9;
+        inputPanel.RowCount = 10;
+        inputPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         inputPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         inputPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         inputPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
@@ -505,7 +510,7 @@ partial class MainForm
         lblProjectPrefix.Text = "專案路徑前綴：";
         // 
         // txtProjectPrefix
-        // 
+        //
         txtProjectPrefix.Enabled = false;
         txtProjectPrefix.Dock = DockStyle.Fill;
         txtProjectPrefix.Location = new Point(185, 188);
@@ -513,7 +518,30 @@ partial class MainForm
         txtProjectPrefix.PlaceholderText = "例如: AFA_EmployerQualification（可選）";
         txtProjectPrefix.Size = new Size(686, 25);
         txtProjectPrefix.TabIndex = 16;
-        // 
+        //
+        // lblForceCopyFiles
+        //
+        lblForceCopyFiles.Anchor = AnchorStyles.Left;
+        lblForceCopyFiles.AutoSize = true;
+        lblForceCopyFiles.Location = new Point(3, 268);
+        lblForceCopyFiles.Name = "lblForceCopyFiles";
+        lblForceCopyFiles.Size = new Size(176, 18);
+        lblForceCopyFiles.TabIndex = 17;
+        lblForceCopyFiles.Text = "強制複製檔案清單：";
+        //
+        // txtForceCopyFiles
+        //
+        txtForceCopyFiles.AcceptsReturn = true;
+        txtForceCopyFiles.Dock = DockStyle.Fill;
+        txtForceCopyFiles.Enabled = false;
+        txtForceCopyFiles.Location = new Point(185, 268);
+        txtForceCopyFiles.Multiline = true;
+        txtForceCopyFiles.Name = "txtForceCopyFiles";
+        txtForceCopyFiles.PlaceholderText = "請輸入要強制複製的檔案路徑（每行一個）\n支援萬用字元，例如：\nbin\\MyApp.dll\nbin\\*.dll\nlib\\**\\*.config";
+        txtForceCopyFiles.ScrollBars = ScrollBars.Vertical;
+        txtForceCopyFiles.Size = new Size(686, 80);
+        txtForceCopyFiles.TabIndex = 18;
+        //
         // MainForm
         // 
         AutoScaleDimensions = new SizeF(8F, 18F);
@@ -573,4 +601,6 @@ partial class MainForm
     private TableLayoutPanel deploymentPanel;
     private Label lblProjectPrefix;
     private TextBox txtProjectPrefix;
+    private Label lblForceCopyFiles;
+    private TextBox txtForceCopyFiles;
 }

@@ -53,6 +53,7 @@ public partial class MainForm : Form
         txtBuildOutput.Text = settings.BuildOutputFolder;
         txtDeployment.Text = settings.DeploymentFolder;
         txtProjectPrefix.Text = settings.ProjectPathPrefix;
+        txtForceCopyFiles.Text = settings.ForceCopyFileList;
     }
 
     /// <summary>
@@ -68,7 +69,8 @@ public partial class MainForm : Form
             CompareCommitId = txtCompareCommit.Text.Trim(),
             BuildOutputFolder = txtBuildOutput.Text.Trim(),
             DeploymentFolder = txtDeployment.Text.Trim(),
-            ProjectPathPrefix = txtProjectPrefix.Text.Trim()
+            ProjectPathPrefix = txtProjectPrefix.Text.Trim(),
+            ForceCopyFileList = txtForceCopyFiles.Text.Trim()
         };
         _settingsService.Save(settings);
     }
@@ -270,6 +272,7 @@ public partial class MainForm : Form
         txtProjectPrefix.Enabled = hasResults;
         txtDeployment.Enabled = hasResults;
         btnBrowseDeployment.Enabled = hasResults;
+        txtForceCopyFiles.Enabled = hasResults;
         btnCopyFiles.Enabled = hasResults;
 
         if (isProcessing)
@@ -412,20 +415,46 @@ public partial class MainForm : Form
             // 儲存設定
             SaveSettings();
 
-            // 執行複製
+            // 1. 複製 Git 差異檔案
             var projectPrefix = txtProjectPrefix.Text.Trim();
-            var result = _fileCopyService.CopyMatchedFiles(_currentResults, buildPath, deployPath, projectPrefix);
+            var gitResult = _fileCopyService.CopyMatchedFiles(_currentResults, buildPath, deployPath, projectPrefix);
 
-            // 顯示結果
-            var message = $"複製完成！\n" +
-                          $"成功複製：{result.CopiedCount} 個檔案\n" +
-                          $"未找到檔案：{result.NotFoundFiles.Count} 個\n\n" +
-                          $"注意：.dll, .exe 等二進位檔案及被刪除的檔案未包含在內。";
+            // 2. 複製強制指定的檔案（支援萬用字元）
+            var forceCopyList = txtForceCopyFiles.Text.Trim();
+            var forcedResult = _fileCopyService.CopyForcedFiles(forceCopyList, buildPath, deployPath);
 
-            if (result.NotFoundFiles.Count > 0)
+            // 3. 合併結果（使用 Distinct 去重）
+            var totalResult = new FileCopyService.CopyResult
             {
-                message += $"\n\n未找到的檔案範例：\n{string.Join("\n", result.NotFoundFiles.Take(3))}" +
-                           (result.NotFoundFiles.Count > 3 ? "\n..." : "");
+                CopiedCount = gitResult.CopiedCount + forcedResult.CopiedCount,
+                CopiedFiles = gitResult.CopiedFiles.Concat(forcedResult.CopiedFiles).ToList(),
+                NotFoundFiles = gitResult.NotFoundFiles
+                    .Concat(forcedResult.NotFoundFiles)
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList()
+            };
+
+            // 4. 顯示詳細結果
+            var message = $"複製完成！\n\n" +
+                          $"【Git 差異檔案】\n" +
+                          $"  成功: {gitResult.CopiedCount} 個\n" +
+                          $"  未找到: {gitResult.NotFoundFiles.Count} 個\n\n" +
+                          $"【強制複製檔案】\n" +
+                          $"  成功: {forcedResult.CopiedCount} 個\n" +
+                          $"  未找到: {forcedResult.NotFoundFiles.Count} 個\n\n" +
+                          $"【總計】\n" +
+                          $"  成功: {totalResult.CopiedCount} 個\n" +
+                          $"  未找到: {totalResult.NotFoundFiles.Count} 個";
+
+            if (totalResult.NotFoundFiles.Count > 0)
+            {
+                message += $"\n\n未找到的檔案範例（前 5 個）：\n" +
+                           string.Join("\n", totalResult.NotFoundFiles.Take(5).Select(f => $"  • {f}"));
+
+                if (totalResult.NotFoundFiles.Count > 5)
+                {
+                    message += $"\n  ... 還有 {totalResult.NotFoundFiles.Count - 5} 個";
+                }
             }
 
             MessageBox.Show(message, "處理完成", MessageBoxButtons.OK, MessageBoxIcon.Information);

@@ -141,4 +141,36 @@ public class SettingsServiceTests
             }
         }
     }
+
+    /// <summary>
+    /// 測試儲存和載入強制複製檔案清單
+    /// </summary>
+    [Fact]
+    public void SaveAndLoad_ShouldPersistForceCopyFileList()
+    {
+        // Arrange
+        var tempFile = Path.GetTempFileName();
+        var service = new SettingsService(tempFile);
+        var settings = new AppSettings
+        {
+            ForceCopyFileList = "bin\\app.dll\nlib\\*.dll\nconfig\\**\\*.json"
+        };
+
+        try
+        {
+            // Act
+            service.Save(settings);
+            var loaded = service.Load();
+
+            // Assert
+            Assert.Equal(settings.ForceCopyFileList, loaded.ForceCopyFileList);
+        }
+        finally
+        {
+            if (File.Exists(tempFile))
+            {
+                File.Delete(tempFile);
+            }
+        }
+    }
 }

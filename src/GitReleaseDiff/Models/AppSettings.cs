@@ -39,4 +39,9 @@ public class AppSettings
     /// 專案路徑前綴（用於多專案方案，可選）
     /// </summary>
     public string ProjectPathPrefix { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 強制複製的檔案清單（換行分隔，支援萬用字元 * 和 ?）
+    /// </summary>
+    public string ForceCopyFileList { get; set; } = string.Empty;
 }

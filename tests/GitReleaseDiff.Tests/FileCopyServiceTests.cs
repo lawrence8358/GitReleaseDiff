@@ -254,4 +254,132 @@ public class FileCopyServiceTests : IDisposable
         var expectedPath = Path.Combine(_tempDeployFolder, relativePath);
         Assert.True(File.Exists(expectedPath));
     }
+
+    [Fact]
+    public void CopyForcedFiles_ShouldCopyAllListedFiles_WhenFilesExist()
+    {
+        // Arrange
+        var file1 = "bin\\app.dll";
+        var file2 = "lib\\helper.dll";
+
+        Directory.CreateDirectory(Path.Combine(_tempBuildFolder, "bin"));
+        Directory.CreateDirectory(Path.Combine(_tempBuildFolder, "lib"));
+        File.WriteAllText(Path.Combine(_tempBuildFolder, "bin", "app.dll"), "dll1");
+        File.WriteAllText(Path.Combine(_tempBuildFolder, "lib", "helper.dll"), "dll2");
+
+        var forceCopyList = $"{file1}\n{file2}";
+
+        // Act
+        var result = _service.CopyForcedFiles(forceCopyList, _tempBuildFolder, _tempDeployFolder);
+
+        // Assert
+        Assert.Equal(2, result.CopiedCount);
+        Assert.Equal(2, result.CopiedFiles.Count);
+        Assert.Empty(result.NotFoundFiles);
+        Assert.True(File.Exists(Path.Combine(_tempDeployFolder, "bin", "app.dll")));
+        Assert.True(File.Exists(Path.Combine(_tempDeployFolder, "lib", "helper.dll")));
+    }
+
+    [Fact]
+    public void CopyForcedFiles_ShouldHandleWildcardPattern()
+    {
+        // Arrange
+        Directory.CreateDirectory(Path.Combine(_tempBuildFolder, "bin"));
+        File.WriteAllText(Path.Combine(_tempBuildFolder, "bin", "app1.dll"), "content1");
+        File.WriteAllText(Path.Combine(_tempBuildFolder, "bin", "app2.dll"), "content2");
+        File.WriteAllText(Path.Combine(_tempBuildFolder, "bin", "readme.txt"), "text");
+
+        var forceCopyList = "bin\\*.dll";
+
+        // Act
+        var result = _service.CopyForcedFiles(forceCopyList, _tempBuildFolder, _tempDeployFolder);
+
+        // Assert
+        Assert.Equal(2, result.CopiedCount);
+        Assert.Contains(result.CopiedFiles, f => f.Contains("app1.dll"));
+        Assert.Contains(result.CopiedFiles, f => f.Contains("app2.dll"));
+        Assert.False(File.Exists(Path.Combine(_tempDeployFolder, "bin", "readme.txt")));
+    }
+
+    [Fact]
+    public void CopyForcedFiles_ShouldHandleRecursiveWildcard()
+    {
+        // Arrange
+        Directory.CreateDirectory(Path.Combine(_tempBuildFolder, "lib", "sub1"));
+        Directory.CreateDirectory(Path.Combine(_tempBuildFolder, "lib", "sub2"));
+        File.WriteAllText(Path.Combine(_tempBuildFolder, "lib", "root.config"), "root");
+        File.WriteAllText(Path.Combine(_tempBuildFolder, "lib", "sub1", "file1.config"), "sub1");
+        File.WriteAllText(Path.Combine(_tempBuildFolder, "lib", "sub2", "file2.config"), "sub2");
+
+        var forceCopyList = "lib\\**\\*.config";
+
+        // Act
+        var result = _service.CopyForcedFiles(forceCopyList, _tempBuildFolder, _tempDeployFolder);
+
+        // Assert
+        Assert.Equal(3, result.CopiedCount);
+        Assert.True(File.Exists(Path.Combine(_tempDeployFolder, "lib", "root.config")));
+        Assert.True(File.Exists(Path.Combine(_tempDeployFolder, "lib", "sub1", "file1.config")));
+        Assert.True(File.Exists(Path.Combine(_tempDeployFolder, "lib", "sub2", "file2.config")));
+    }
+
+    [Fact]
+    public void CopyForcedFiles_ShouldHandleEmptyList()
+    {
+        // Act
+        var result = _service.CopyForcedFiles("", _tempBuildFolder, _tempDeployFolder);
+
+        // Assert
+        Assert.Equal(0, result.CopiedCount);
+        Assert.Empty(result.CopiedFiles);
+    }
+
+    [Fact]
+    public void CopyForcedFiles_ShouldTrackNotFoundFiles()
+    {
+        // Arrange
+        var forceCopyList = "missing1.dll\nmissing2.dll";
+
+        // Act
+        var result = _service.CopyForcedFiles(forceCopyList, _tempBuildFolder, _tempDeployFolder);
+
+        // Assert
+        Assert.Equal(0, result.CopiedCount);
+        Assert.Equal(2, result.NotFoundFiles.Count);
+    }
+
+    [Fact]
+    public void CopyForcedFiles_ShouldHandleWildcardWithNoMatches()
+    {
+        // Arrange
+        Directory.CreateDirectory(Path.Combine(_tempBuildFolder, "bin"));
+        var forceCopyList = "bin\\*.dll";
+
+        // Act
+        var result = _service.CopyForcedFiles(forceCopyList, _tempBuildFolder, _tempDeployFolder);
+
+        // Assert
+        Assert.Equal(0, result.CopiedCount);
+        Assert.Single(result.NotFoundFiles);
+        Assert.Contains("未匹配任何檔案", result.NotFoundFiles[0]);
+    }
+
+    [Fact]
+    public void CopyForcedFiles_ShouldHandleQuestionMarkWildcard()
+    {
+        // Arrange
+        Directory.CreateDirectory(Path.Combine(_tempBuildFolder, "bin"));
+        File.WriteAllText(Path.Combine(_tempBuildFolder, "bin", "app1.dll"), "content");
+        File.WriteAllText(Path.Combine(_tempBuildFolder, "bin", "app2.dll"), "content");
+        File.WriteAllText(Path.Combine(_tempBuildFolder, "bin", "app10.dll"), "content");
+
+        var forceCopyList = "bin\\app?.dll";
+
+        // Act
+        var result = _service.CopyForcedFiles(forceCopyList, _tempBuildFolder, _tempDeployFolder);
+
+        // Assert
+        Assert.Equal(2, result.CopiedCount); // 只匹配單字元: app1.dll, app2.dll
+        Assert.False(File.Exists(Path.Combine(_tempDeployFolder, "bin", "app10.dll")));
+    }
 }
