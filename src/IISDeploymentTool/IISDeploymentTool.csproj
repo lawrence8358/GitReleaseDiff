@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
@@ -6,17 +6,11 @@
     <Nullable>enable</Nullable>
     <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
-    <AssemblyName>GitReleaseDiff</AssemblyName>
-    <RootNamespace>GitReleaseDiff</RootNamespace>
-    <Version>1.0.1</Version>
-    <Authors>Developer</Authors>
-    <Description>Git 版本比對工具 - 用於比較兩個 Commit 之間的檔案差異</Description>
     <ApplicationIcon>icon.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="10.0.1" />
   </ItemGroup>
 
   <ItemGroup>

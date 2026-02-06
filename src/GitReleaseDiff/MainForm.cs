@@ -22,6 +22,17 @@ public partial class MainForm : Form
     {
         InitializeComponent();
 
+        // 設定視窗圖示
+        try
+        {
+            var iconPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "icon.ico");
+            if (File.Exists(iconPath))
+            {
+                this.Icon = new Icon(iconPath);
+            }
+        }
+        catch { /* 忽略圖示載入錯誤 */ }
+
         _gitService = new GitService();
         _settingsService = new SettingsService();
         _csvExportService = new CsvExportService();
