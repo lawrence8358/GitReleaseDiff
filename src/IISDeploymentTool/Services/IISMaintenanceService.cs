@@ -1,9 +1,10 @@
+using System.Diagnostics;
 using System.Text;
 
 namespace IISDeploymentTool.Services;
 
 /// <summary>
-/// IIS 維護模式服務，負責管理 app_offline.htm 檔案
+/// IIS 維護模式服務，負責管理 app_offline.htm 檔案和應用程式池
 /// </summary>
 public class IISMaintenanceService
 {
@@ -13,7 +14,8 @@ public class IISMaintenanceService
     /// 啟用維護模式（創建 app_offline.htm）
     /// </summary>
     /// <param name="iisFolder">IIS 站台資料夾路徑</param>
-    public void Enable(string iisFolder)
+    /// <param name="appPoolName">應用程式池名稱（選填）</param>
+    public void Enable(string iisFolder, string? appPoolName = null)
     {
         var filePath = Path.Combine(iisFolder, APP_OFFLINE_FILENAME);
 
@@ -65,15 +67,26 @@ public class IISMaintenanceService
 
         File.WriteAllText(filePath, content, Encoding.UTF8);
 
-        // 等待 IIS 偵測到檔案（通常幾秒內）
-        Thread.Sleep(2000);
+        // 如果有提供應用程式池名稱，則停止應用程式池
+        if (!string.IsNullOrWhiteSpace(appPoolName))
+        {
+            StopApplicationPool(appPoolName);
+            // 等待應用程式池完全停止並釋放檔案鎖定
+            Thread.Sleep(5000);
+        }
+        else
+        {
+            // 沒有提供應用程式池名稱，延長等待時間讓 ASP.NET Core Module 釋放檔案
+            Thread.Sleep(5000);
+        }
     }
 
     /// <summary>
     /// 停用維護模式（移除 app_offline.htm）
     /// </summary>
     /// <param name="iisFolder">IIS 站台資料夾路徑</param>
-    public void Disable(string iisFolder)
+    /// <param name="appPoolName">應用程式池名稱（選填）</param>
+    public void Disable(string iisFolder, string? appPoolName = null)
     {
         var filePath = Path.Combine(iisFolder, APP_OFFLINE_FILENAME);
 
@@ -88,7 +101,7 @@ public class IISMaintenanceService
                 try
                 {
                     File.Delete(filePath);
-                    return;
+                    break;
                 }
                 catch (IOException)
                 {
@@ -101,6 +114,12 @@ public class IISMaintenanceService
                 }
             }
         }
+
+        // 如果有提供應用程式池名稱，則重新啟動應用程式池
+        if (!string.IsNullOrWhiteSpace(appPoolName))
+        {
+            StartApplicationPool(appPoolName);
+        }
     }
 
     /// <summary>
@@ -112,5 +131,103 @@ public class IISMaintenanceService
     {
         var filePath = Path.Combine(iisFolder, APP_OFFLINE_FILENAME);
         return File.Exists(filePath);
+    }
+
+    /// <summary>
+    /// 停止應用程式池
+    /// </summary>
+    /// <param name="appPoolName">應用程式池名稱</param>
+    private void StopApplicationPool(string appPoolName)
+    {
+        try
+        {
+            var appcmdPath = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.System),
+                @"inetsrv\appcmd.exe");
+
+            if (!File.Exists(appcmdPath))
+            {
+                throw new FileNotFoundException("找不到 appcmd.exe，請確認 IIS 已正確安裝。");
+            }
+
+            var startInfo = new ProcessStartInfo
+            {
+                FileName = appcmdPath,
+                Arguments = $"stop apppool \"{appPoolName}\"",
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true
+            };
+
+            using var process = Process.Start(startInfo);
+            if (process != null)
+            {
+                process.WaitForExit(30000); // 等待最多 30 秒
+
+                if (process.ExitCode != 0)
+                {
+                    var error = process.StandardError.ReadToEnd();
+                    // 如果應用程式池已經停止，則忽略錯誤
+                    if (!error.Contains("already stopped", StringComparison.OrdinalIgnoreCase))
+                    {
+                        throw new InvalidOperationException($"停止應用程式池失敗：{error}");
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException($"停止應用程式池 '{appPoolName}' 時發生錯誤：{ex.Message}", ex);
+        }
+    }
+
+    /// <summary>
+    /// 啟動應用程式池
+    /// </summary>
+    /// <param name="appPoolName">應用程式池名稱</param>
+    private void StartApplicationPool(string appPoolName)
+    {
+        try
+        {
+            var appcmdPath = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.System),
+                @"inetsrv\appcmd.exe");
+
+            if (!File.Exists(appcmdPath))
+            {
+                throw new FileNotFoundException("找不到 appcmd.exe，請確認 IIS 已正確安裝。");
+            }
+
+            var startInfo = new ProcessStartInfo
+            {
+                FileName = appcmdPath,
+                Arguments = $"start apppool \"{appPoolName}\"",
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true
+            };
+
+            using var process = Process.Start(startInfo);
+            if (process != null)
+            {
+                process.WaitForExit(30000); // 等待最多 30 秒
+
+                if (process.ExitCode != 0)
+                {
+                    var error = process.StandardError.ReadToEnd();
+                    // 如果應用程式池已經啟動，則忽略錯誤
+                    if (!error.Contains("already started", StringComparison.OrdinalIgnoreCase))
+                    {
+                        throw new InvalidOperationException($"啟動應用程式池失敗：{error}");
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException($"啟動應用程式池 '{appPoolName}' 時發生錯誤：{ex.Message}", ex);
+        }
     }
 }

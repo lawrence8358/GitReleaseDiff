@@ -43,7 +43,28 @@ public partial class MainForm : Form
         btnBrowseSource.Click += BtnBrowseSource_Click;
         btnBrowseIIS.Click += BtnBrowseIIS_Click;
         btnBrowseBackup.Click += BtnBrowseBackup_Click;
+        this.Load += MainForm_Load;
         this.FormClosing += MainForm_FormClosing;
+    }
+
+    /// <summary>
+    /// 表單載入事件
+    /// </summary>
+    private void MainForm_Load(object? sender, EventArgs e)
+    {
+        var settings = _settingsService.Load();
+
+        // 還原視窗大小
+        if (settings.WindowWidth > 0 && settings.WindowHeight > 0)
+        {
+            this.Size = new Size(settings.WindowWidth, settings.WindowHeight);
+        }
+
+        // 還原最大化狀態
+        if (settings.IsMaximized)
+        {
+            this.WindowState = FormWindowState.Maximized;
+        }
     }
 
     /// <summary>
@@ -55,6 +76,7 @@ public partial class MainForm : Form
         txtSourceFolder.Text = settings.SourceFolder;
         txtIISFolder.Text = settings.IISFolder;
         txtBackupFolder.Text = settings.BackupFolder;
+        txtAppPool.Text = settings.ApplicationPoolName;
 
         if (settings.LastDeploymentTime.HasValue)
         {
@@ -72,6 +94,7 @@ public partial class MainForm : Form
             SourceFolder = txtSourceFolder.Text.Trim(),
             IISFolder = txtIISFolder.Text.Trim(),
             BackupFolder = txtBackupFolder.Text.Trim(),
+            ApplicationPoolName = txtAppPool.Text.Trim(),
             LastDeploymentTime = DateTime.Now
         };
         _settingsService.Save(settings);
@@ -121,7 +144,8 @@ public partial class MainForm : Form
             {
                 SourceFolder = txtSourceFolder.Text.Trim(),
                 IISFolder = txtIISFolder.Text.Trim(),
-                BackupFolder = txtBackupFolder.Text.Trim()
+                BackupFolder = txtBackupFolder.Text.Trim(),
+                ApplicationPoolName = txtAppPool.Text.Trim()
             };
 
             var result = await _deploymentService.DeployAsync(
@@ -175,7 +199,7 @@ public partial class MainForm : Form
 
                     if (rollbackResult == DialogResult.Yes)
                     {
-                        await PerformRollback(result.BackupFilePath, settings.IISFolder);
+                        await PerformRollback(result.BackupFilePath, settings.IISFolder, settings.ApplicationPoolName);
                     }
                 }
                 else
@@ -208,7 +232,7 @@ public partial class MainForm : Form
     /// <summary>
     /// 執行回滾
     /// </summary>
-    private async Task PerformRollback(string backupFilePath, string iisFolder)
+    private async Task PerformRollback(string backupFilePath, string iisFolder, string? appPoolName = null)
     {
         AppendLog("\r\n========================================\r\n");
         AppendLog("開始回滾操作...\r\n");
@@ -221,7 +245,7 @@ public partial class MainForm : Form
 
         try
         {
-            await _deploymentService.RollbackAsync(backupFilePath, iisFolder, progress);
+            await _deploymentService.RollbackAsync(backupFilePath, iisFolder, progress, appPoolName);
 
             AppendLog("\r\n========================================\r\n");
             AppendLog("✓ 回滾完成\r\n");
@@ -433,7 +457,8 @@ public partial class MainForm : Form
 
                 if (confirmResult == DialogResult.Yes)
                 {
-                    await PerformManualRollback(selectedBackup.FilePath, iisFolder);
+                    var appPoolName = txtAppPool.Text.Trim();
+                    await PerformManualRollback(selectedBackup.FilePath, iisFolder, appPoolName);
                 }
             }
         }
@@ -442,7 +467,7 @@ public partial class MainForm : Form
     /// <summary>
     /// 執行手動回滾
     /// </summary>
-    private async Task PerformManualRollback(string backupFilePath, string iisFolder)
+    private async Task PerformManualRollback(string backupFilePath, string iisFolder, string? appPoolName = null)
     {
         SetUiProcessingState(true);
         txtLog.Clear();
@@ -457,7 +482,7 @@ public partial class MainForm : Form
 
         try
         {
-            await _deploymentService.RollbackAsync(backupFilePath, iisFolder, progress);
+            await _deploymentService.RollbackAsync(backupFilePath, iisFolder, progress, appPoolName);
 
             AppendLog("\r\n========================================\r\n");
             AppendLog("✓ 回滾完成\r\n");
@@ -514,5 +539,28 @@ public partial class MainForm : Form
 
             _cancellationTokenSource.Cancel();
         }
+
+        // 儲存視窗大小和狀態
+        SaveWindowState();
+    }
+
+    /// <summary>
+    /// 儲存視窗狀態
+    /// </summary>
+    private void SaveWindowState()
+    {
+        var settings = _settingsService.Load();
+
+        // 儲存最大化狀態
+        settings.IsMaximized = this.WindowState == FormWindowState.Maximized;
+
+        // 如果不是最大化，儲存當前視窗大小
+        if (this.WindowState == FormWindowState.Normal)
+        {
+            settings.WindowWidth = this.Width;
+            settings.WindowHeight = this.Height;
+        }
+
+        _settingsService.Save(settings);
     }
 }

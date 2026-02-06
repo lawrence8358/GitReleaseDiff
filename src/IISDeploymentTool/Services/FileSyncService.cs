@@ -67,11 +67,16 @@ public class FileSyncService
                     Directory.CreateDirectory(destDir);
                 }
 
-                // 複製檔案（覆寫）
-                File.Copy(sourceFile, destFile, overwrite: true);
-
-                result.CopiedFiles.Add(relPath);
-                result.CopiedCount++;
+                // 複製檔案（覆寫），對於被鎖定的檔案進行重試
+                if (CopyFileWithRetry(sourceFile, destFile))
+                {
+                    result.CopiedFiles.Add(relPath);
+                    result.CopiedCount++;
+                }
+                else
+                {
+                    result.ErrorFiles.Add($"{relPath}: 檔案被鎖定，無法複製（已重試多次）");
+                }
             }
             catch (Exception ex)
             {
@@ -85,5 +90,60 @@ public class FileSyncService
         }
 
         return result;
+    }
+
+    /// <summary>
+    /// 帶重試機制的檔案複製
+    /// </summary>
+    /// <param name="sourceFile">來源檔案路徑</param>
+    /// <param name="destFile">目標檔案路徑</param>
+    /// <param name="maxRetries">最大重試次數</param>
+    /// <param name="retryDelayMs">重試延遲（毫秒）</param>
+    /// <returns>是否成功複製</returns>
+    private bool CopyFileWithRetry(
+        string sourceFile,
+        string destFile,
+        int maxRetries = 5,
+        int retryDelayMs = 2000)
+    {
+        for (int retry = 0; retry < maxRetries; retry++)
+        {
+            try
+            {
+                // 如果目標檔案存在且被鎖定，嘗試先刪除
+                if (File.Exists(destFile))
+                {
+                    // 嘗試移除唯讀屬性
+                    try
+                    {
+                        var attributes = File.GetAttributes(destFile);
+                        if ((attributes & FileAttributes.ReadOnly) == FileAttributes.ReadOnly)
+                        {
+                            File.SetAttributes(destFile, attributes & ~FileAttributes.ReadOnly);
+                        }
+                    }
+                    catch
+                    {
+                        // 忽略屬性變更錯誤
+                    }
+                }
+
+                // 複製檔案
+                File.Copy(sourceFile, destFile, overwrite: true);
+                return true;
+            }
+            catch (IOException) when (retry < maxRetries - 1)
+            {
+                // 檔案被鎖定，等待後重試
+                Thread.Sleep(retryDelayMs);
+            }
+            catch (UnauthorizedAccessException) when (retry < maxRetries - 1)
+            {
+                // 權限問題，等待後重試
+                Thread.Sleep(retryDelayMs);
+            }
+        }
+
+        return false;
     }
 }

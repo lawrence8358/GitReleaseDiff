@@ -52,8 +52,14 @@ public class DeploymentService
             progress?.Report("步驟 2/5：啟用維護模式（創建 app_offline.htm）...");
             result.FailedAtStep = DeploymentStep.EnableMaintenanceMode;
             await Task.Run(() =>
-                _maintenanceService.Enable(settings.IISFolder),
+                _maintenanceService.Enable(settings.IISFolder, settings.ApplicationPoolName),
                 cancellationToken);
+
+            if (!string.IsNullOrWhiteSpace(settings.ApplicationPoolName))
+            {
+                progress?.Report($"已停止應用程式池：{settings.ApplicationPoolName}");
+            }
+
             cancellationToken.ThrowIfCancellationRequested();
 
             // 步驟 2：備份檔案
@@ -100,8 +106,13 @@ public class DeploymentService
             progress?.Report("步驟 5/5：停用維護模式（移除 app_offline.htm）...");
             result.FailedAtStep = DeploymentStep.DisableMaintenanceMode;
             await Task.Run(() =>
-                _maintenanceService.Disable(settings.IISFolder),
+                _maintenanceService.Disable(settings.IISFolder, settings.ApplicationPoolName),
                 cancellationToken);
+
+            if (!string.IsNullOrWhiteSpace(settings.ApplicationPoolName))
+            {
+                progress?.Report($"已啟動應用程式池：{settings.ApplicationPoolName}");
+            }
 
             // 完成
             result.IsSuccess = true;
@@ -123,7 +134,7 @@ public class DeploymentService
                 if (_maintenanceService.IsInMaintenanceMode(settings.IISFolder))
                 {
                     progress?.Report("正在清理維護模式...");
-                    _maintenanceService.Disable(settings.IISFolder);
+                    _maintenanceService.Disable(settings.IISFolder, settings.ApplicationPoolName);
                 }
             }
             catch
@@ -148,7 +159,7 @@ public class DeploymentService
                     _maintenanceService.IsInMaintenanceMode(settings.IISFolder))
                 {
                     progress?.Report("正在清理維護模式...");
-                    _maintenanceService.Disable(settings.IISFolder);
+                    _maintenanceService.Disable(settings.IISFolder, settings.ApplicationPoolName);
                 }
             }
             catch
@@ -166,16 +177,23 @@ public class DeploymentService
     /// <param name="backupFilePath">備份檔案路徑</param>
     /// <param name="iisFolder">IIS 站台資料夾</param>
     /// <param name="progress">進度回報</param>
+    /// <param name="appPoolName">應用程式池名稱（選填）</param>
     public async Task RollbackAsync(
         string backupFilePath,
         string iisFolder,
-        IProgress<string>? progress = null)
+        IProgress<string>? progress = null,
+        string? appPoolName = null)
     {
         progress?.Report("開始回滾操作...");
 
         // 啟用維護模式
         progress?.Report("啟用維護模式...");
-        await Task.Run(() => _maintenanceService.Enable(iisFolder));
+        await Task.Run(() => _maintenanceService.Enable(iisFolder, appPoolName));
+
+        if (!string.IsNullOrWhiteSpace(appPoolName))
+        {
+            progress?.Report($"已停止應用程式池：{appPoolName}");
+        }
 
         // 從備份還原
         await Task.Run(() => _rollbackService.RestoreFromBackup(
@@ -185,7 +203,12 @@ public class DeploymentService
 
         // 停用維護模式
         progress?.Report("停用維護模式...");
-        await Task.Run(() => _maintenanceService.Disable(iisFolder));
+        await Task.Run(() => _maintenanceService.Disable(iisFolder, appPoolName));
+
+        if (!string.IsNullOrWhiteSpace(appPoolName))
+        {
+            progress?.Report($"已啟動應用程式池：{appPoolName}");
+        }
 
         progress?.Report("✓ 回滾完成");
     }

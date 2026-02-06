@@ -39,6 +39,8 @@ partial class MainForm
         lblBackupFolder = new Label();
         txtBackupFolder = new TextBox();
         btnBrowseBackup = new Button();
+        lblAppPool = new Label();
+        txtAppPool = new TextBox();
         buttonPanel = new FlowLayoutPanel();
         btnDeploy = new Button();
         btnRollback = new Button();
@@ -93,19 +95,22 @@ partial class MainForm
         inputPanel.Controls.Add(lblBackupFolder, 0, 2);
         inputPanel.Controls.Add(txtBackupFolder, 1, 2);
         inputPanel.Controls.Add(btnBrowseBackup, 2, 2);
-        inputPanel.Controls.Add(buttonPanel, 1, 3);
-        inputPanel.Controls.Add(lblLastDeploy, 0, 4);
-        inputPanel.Controls.Add(lblLastDeployTime, 1, 4);
+        inputPanel.Controls.Add(lblAppPool, 0, 3);
+        inputPanel.Controls.Add(txtAppPool, 1, 3);
+        inputPanel.Controls.Add(buttonPanel, 1, 4);
+        inputPanel.Controls.Add(lblLastDeploy, 0, 5);
+        inputPanel.Controls.Add(lblLastDeployTime, 1, 5);
         inputPanel.Dock = DockStyle.Top;
         inputPanel.Location = new Point(13, 13);
         inputPanel.Name = "inputPanel";
-        inputPanel.RowCount = 5;
+        inputPanel.RowCount = 6;
         inputPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         inputPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         inputPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         inputPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         inputPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        inputPanel.Size = new Size(774, 150);
+        inputPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        inputPanel.Size = new Size(774, 180);
         inputPanel.TabIndex = 0;
         //
         // lblSourceFolder
@@ -195,6 +200,25 @@ partial class MainForm
         btnBrowseBackup.Text = "瀏覽...";
         btnBrowseBackup.UseVisualStyleBackColor = true;
         //
+        // lblAppPool
+        //
+        lblAppPool.Anchor = AnchorStyles.Left;
+        lblAppPool.AutoSize = true;
+        lblAppPool.Location = new Point(3, 107);
+        lblAppPool.Name = "lblAppPool";
+        lblAppPool.Size = new Size(116, 15);
+        lblAppPool.TabIndex = 9;
+        lblAppPool.Text = "應用程式池（選填）：";
+        //
+        // txtAppPool
+        //
+        txtAppPool.Anchor = AnchorStyles.Left | AnchorStyles.Right;
+        txtAppPool.Location = new Point(125, 104);
+        txtAppPool.Name = "txtAppPool";
+        txtAppPool.PlaceholderText = "例如：MyAppPool（若不填寫則僅使用 app_offline.htm）";
+        txtAppPool.Size = new Size(550, 23);
+        txtAppPool.TabIndex = 10;
+        //
         // buttonPanel
         //
         buttonPanel.AutoSize = true;
@@ -202,10 +226,10 @@ partial class MainForm
         buttonPanel.Controls.Add(btnRollback);
         buttonPanel.Controls.Add(btnCancel);
         buttonPanel.Dock = DockStyle.Fill;
-        buttonPanel.Location = new Point(125, 102);
+        buttonPanel.Location = new Point(125, 135);
         buttonPanel.Name = "buttonPanel";
         buttonPanel.Size = new Size(550, 35);
-        buttonPanel.TabIndex = 9;
+        buttonPanel.TabIndex = 11;
         //
         // btnDeploy
         //
@@ -243,10 +267,10 @@ partial class MainForm
         lblLastDeploy.Anchor = AnchorStyles.Left;
         lblLastDeploy.AutoSize = true;
         lblLastDeploy.ForeColor = Color.Gray;
-        lblLastDeploy.Location = new Point(3, 147);
+        lblLastDeploy.Location = new Point(3, 180);
         lblLastDeploy.Name = "lblLastDeploy";
         lblLastDeploy.Size = new Size(80, 15);
-        lblLastDeploy.TabIndex = 10;
+        lblLastDeploy.TabIndex = 12;
         lblLastDeploy.Text = "上次部署：";
         //
         // lblLastDeployTime
@@ -254,10 +278,10 @@ partial class MainForm
         lblLastDeployTime.Anchor = AnchorStyles.Left;
         lblLastDeployTime.AutoSize = true;
         lblLastDeployTime.ForeColor = Color.Gray;
-        lblLastDeployTime.Location = new Point(125, 147);
+        lblLastDeployTime.Location = new Point(125, 180);
         lblLastDeployTime.Name = "lblLastDeployTime";
         lblLastDeployTime.Size = new Size(56, 15);
-        lblLastDeployTime.TabIndex = 11;
+        lblLastDeployTime.TabIndex = 13;
         lblLastDeployTime.Text = "（無）";
         //
         // logPanel
@@ -364,6 +388,8 @@ partial class MainForm
     private Label lblBackupFolder;
     private TextBox txtBackupFolder;
     private Button btnBrowseBackup;
+    private Label lblAppPool;
+    private TextBox txtAppPool;
     private FlowLayoutPanel buttonPanel;
     private Button btnDeploy;
     private Button btnRollback;
